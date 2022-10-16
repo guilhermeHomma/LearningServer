@@ -5,19 +5,21 @@ sg.theme('Reddit')
 
 
 class Chat:
-    def __init__(self):
+    def __init__(self, name):
         self.RUNNING : bool = True
-        self.username = ''
-        self.messages = ['']
+        self.username = name
+        self.messages = [ '' , '' , '' , '' , '' ]
         self.lastmessage = ''
         self.window = self.ChatWindow()
         pass
 
     def stop(self):
         self.RUNNING = False
+        self.window.close()
 
     def ReceiveMessage(self, message: str):
         self.messages.append(message)
+        self.messages.pop(0)
 
         full_text : str = ''
 
@@ -26,18 +28,19 @@ class Chat:
 
         self.window['TEXTBOX'].update(value=full_text)
 
-    def getmessage(self) -> str:
+    def SendMessage(self) -> str:
         message = self.lastmessage
-        self.lastmessag = ''
+        print(message)
+        self.lastmessage = ''
         return message
 
     def ChatWindow(self):
         layout = [
-            [sg.Text('', key='TEXTBOX')],
-            [sg.Input(key='MESSAGE')],
+            [sg.Text('\n \n \n \n \n', key='TEXTBOX')],
+            [sg.Input(key='MESSAGE',do_not_clear=False)],
             [sg.Button('send')]
         ]
-        return sg.Window('chat', layout)
+        return sg.Window(self.username +' chat', layout)
         #self.janela = sg.Window('chat', layout)
     
     def update(self):
@@ -47,6 +50,6 @@ class Chat:
             self.RUNNING = False
 
         if events == 'send' and values['MESSAGE'] != '':
-            self.ReceiveMessage(values['MESSAGE'])
-            return values['MESSAGE']
+            self.lastmessage = values['MESSAGE']
+            self.ReceiveMessage(f'you: '+values['MESSAGE'])
 

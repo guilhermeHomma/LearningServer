@@ -1,17 +1,19 @@
+import errno
 from http import client
+from pickletools import read_uint1
+from re import M
 from ssl import SOCK_STREAM
 import threading
 import socket
+import os
 
 from client_ui import Chat
 
 class ServerCliente:
     def __init__(self,chat: Chat) -> None:
         self.chat = chat
-        pass
-
-    def StartServer(self):
         self.client = socket.socket(socket.AF_INET,SOCK_STREAM)
+
         try:
             self.client.connect(('localhost',7777))
         except:
@@ -19,38 +21,30 @@ class ServerCliente:
             return print("não foi possivel conectar")
         
         username = 'user'
-
         print('\nConectado')
 
-        self.thread1 = threading.Thread(target=self.receiveMessages)
-        self.thread2 = threading.Thread(target=self.sendMessages)
+    def StopSocket(self):
+        print('STOP OS')
+        os.abort()
 
-        self.thread1.start()
-        self.thread2.start()
-
-    def receiveMessages(self):
-        print('receiving')
-        while self.chat.RUNNING:
+    def ReceiveMessages(self):
+        try:
             msg = self.client.recv(2048).decode('utf-8')
-            try:
-                if self.chat.RUNNING:
-                    self.chat.ReceiveMessage(msg)
-                else:
-                    return
-            except:
-                print("SERVER -> Desconectado")
-                self.chat.stop()
-                self.client.close()
-                break
-        print('thread receive -> FINISH')
+            if type(msg) is str and msg != "":
+                self.chat.ReceiveMessage(msg)
+        except NameError as error:
+            print(error)
+            pass
 
-    def sendMessages(self):
-        while self.chat.RUNNING:
-            try:
-                msg = self.chat.getmessage()
-                if msg == '':
-                    continue
-                self.client.send(f'{msg}'.encode('utf-8'))
-            except:
+    def sendMessages(self, msg):
+        print('client sending...')
+        try:
+            if msg == '':
+                print('message null')
                 return
-        print('thread send -> FINISH')
+            self.client.send(f'{msg}'.encode('utf-8'))
+        except NameError as error: 
+            print(error)
+            pass
+
+        print('message sent')
