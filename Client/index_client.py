@@ -3,42 +3,54 @@ from ssl import SOCK_STREAM
 import threading
 import socket
 
-def main():
-    client = socket.socket(socket.AF_INET,SOCK_STREAM)
+from client_ui import Chat
 
-    try:
-        client.connect(('localhost',7777))
-    except:
-        return print("não foi possivel conectar")
-    
-    username = input('Usuário> ')
-    print('\nConectado')
+class ServerCliente:
+    def __init__(self,chat: Chat) -> None:
+        self.chat = chat
+        pass
 
-    thread1 = threading.Thread(target=receiveMessages, args=[client])
-    thread2 = threading.Thread(target=sendMessages, args=[client, username])
-
-    thread1.start()
-    thread2.start()
-
-def receiveMessages(client):
-    while True:
+    def StartServer(self):
+        self.client = socket.socket(socket.AF_INET,SOCK_STREAM)
         try:
-            msg = client.recv(2048).decode('utf-8')
-            print("\n"+msg)
+            self.client.connect(('localhost',7777))
         except:
-            print("\nnão foi possivel manter conexão")
-            print("\nPressione <enter> para continuar")
-            client.close()
-            break
-    pass
+            self.chat.stop()
+            return print("não foi possivel conectar")
+        
+        username = 'user'
 
-def sendMessages(client, username):
-    while True:
-        try:
-            msg = input('\n<voce>')
-            client.send(f'<{username}> {msg}'.encode('utf-8'))
-        except:
-            return
-    pass
+        print('\nConectado')
 
-main()
+        self.thread1 = threading.Thread(target=self.receiveMessages)
+        self.thread2 = threading.Thread(target=self.sendMessages)
+
+        self.thread1.start()
+        self.thread2.start()
+
+    def receiveMessages(self):
+        print('receiving')
+        while self.chat.RUNNING:
+            msg = self.client.recv(2048).decode('utf-8')
+            try:
+                if self.chat.RUNNING:
+                    self.chat.ReceiveMessage(msg)
+                else:
+                    return
+            except:
+                print("SERVER -> Desconectado")
+                self.chat.stop()
+                self.client.close()
+                break
+        print('thread receive -> FINISH')
+
+    def sendMessages(self):
+        while self.chat.RUNNING:
+            try:
+                msg = self.chat.getmessage()
+                if msg == '':
+                    continue
+                self.client.send(f'{msg}'.encode('utf-8'))
+            except:
+                return
+        print('thread send -> FINISH')

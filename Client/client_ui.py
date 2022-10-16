@@ -5,33 +5,48 @@ sg.theme('Reddit')
 
 
 class Chat:
-    def __init__(self, layout, name):
-        self.layout = layout
-        self.janela = sg.Window(name, layout)
-        self.run()
-
-    def showChat(self):
-        layout = [
-                [sg.Input(key='mensagem')],
-                [sg.Button('Enviar')],
-        ]
-        self.janela = sg.Window('tela chat', layout)
+    def __init__(self):
+        self.RUNNING : bool = True
+        self.username = ''
+        self.messages = ['']
+        self.lastmessage = ''
+        self.window = self.ChatWindow()
         pass
+
+    def stop(self):
+        self.RUNNING = False
+
+    def ReceiveMessage(self, message: str):
+        self.messages.append(message)
+
+        full_text : str = ''
+
+        for message in self.messages:
+            full_text += message+'\n'
+
+        self.window['TEXTBOX'].update(value=full_text)
+
+    def getmessage(self) -> str:
+        message = self.lastmessage
+        self.lastmessag = ''
+        return message
+
+    def ChatWindow(self):
+        layout = [
+            [sg.Text('', key='TEXTBOX')],
+            [sg.Input(key='MESSAGE')],
+            [sg.Button('send')]
+        ]
+        return sg.Window('chat', layout)
+        #self.janela = sg.Window('chat', layout)
     
-    def run(self):
-        while True:
-            eventos, valores = self.janela.read()
-            if eventos == sg.WINDOW_CLOSED:
-                print('break')
-                break
-            if eventos == 'cadastrar':
-                print('Bem-vindo a minha primeira interface!')
-                self.name = valores['nome']
-                self.showChat()
+    def update(self):
+        events, values = self.window.read()
+        if events == sg.WINDOW_CLOSED:
+            print("CHAT -> QUIT")
+            self.RUNNING = False
 
+        if events == 'send' and values['MESSAGE'] != '':
+            self.ReceiveMessage(values['MESSAGE'])
+            return values['MESSAGE']
 
-mylayout = [
-        [sg.Text('Nome: '),sg.Input(key='nome')],
-        [sg.Button('cadastrar')]
-]
-chat = Chat(mylayout,'nome')
